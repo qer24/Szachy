@@ -1,0 +1,52 @@
+﻿label
+{
+    font-size: 32px;
+}
+
+#chessboard_white
+{
+    background-image: none;
+    background-color: #ebecd0;
+    border-radius: 0;
+    border: 0;
+    font-size: 32px;
+}
+
+#chessboard_black
+{
+    background-image: none;
+    background-color: #779556;
+    border-radius: 0;
+    border: 0;
+    font-size: 32px;
+}
+
+#chessboard_white:hover
+{
+    border: 4px solid white;
+    border-radius: 8px;
+    background-color: #b1b377;
+}
+
+#chessboard_black:hover
+{
+    border: 4px solid white;
+    border-radius: 8px;
+    background-color: #4f5d41;
+}
+
+#chessboard_selected
+{
+    border: 2px solid white;
+    background-image: none;
+    background-color: #baca2b;
+}
+
+#attacked
+{
+    background-image: url("images/x.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.5;
+}
