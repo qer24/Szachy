@@ -19,6 +19,7 @@ typedef struct square
 square chessboard[CHESSBOARD_SIZE][CHESSBOARD_SIZE];
 
 int turn = 1; //1 = białe, −1 = czarne
+int check = 0; //1 = szach biały, −1 = szach czarny, 0 = brak szacha
 square *selected_square = NULL; //wskaźnik na aktualnie wybrane pole
 
 //funkcja pomocnicza do rysowania szachownicy
@@ -92,15 +93,376 @@ void redraw_chessboard()
     }
 }
 
+void diagonal_moves(int x, int y, int color, square ***moves, int* i, int* canMoveBottomRight, int* canMoveTopRight, int* canMoveBottomLeft, int* canMoveTopLeft)
+{
+    for (int j = 1; j < CHESSBOARD_SIZE; j++)
+    {
+        //prawy dolny
+        if (x + j < CHESSBOARD_SIZE && y + j < CHESSBOARD_SIZE)
+        {
+            if (*canMoveBottomRight)
+            {
+                if ((chessboard[x + j][y + j].piece == 0 || chessboard[x + j][y + j].piece * color < 0))
+                {
+                    if (chessboard[x + j][y + j].piece * color < 0)
+                    {
+                        *canMoveBottomRight = 0;
+                    }
+
+                    (*moves)[*i] = &chessboard[x + j][y + j];
+                    (*i)++;
+                }
+                else
+                {
+                    *canMoveBottomRight = 0;
+                }
+            }
+        }
+
+        //prawy gorny
+        if (x + j < CHESSBOARD_SIZE && y - j >= 0)
+        {
+            if (*canMoveTopRight)
+            {
+                if (chessboard[x + j][y - j].piece == 0 || chessboard[x + j][y - j].piece * color < 0)
+                {
+                    if (chessboard[x + j][y - j].piece * color < 0)
+                    {
+                        *canMoveTopRight = 0;
+                    }
+
+                    (*moves)[*i] = &chessboard[x + j][y - j];
+                    (*i)++;
+                }
+                else
+                {
+                    *canMoveTopRight = 0;
+                }
+            }
+        }
+
+        //lewy dolny
+        if (x - j >= 0 && y + j < CHESSBOARD_SIZE)
+        {
+            if (*canMoveBottomLeft)
+            {
+                if (chessboard[x - j][y + j].piece == 0 || chessboard[x - j][y + j].piece * color < 0)
+                {
+                    if (chessboard[x - j][y + j].piece * color < 0)
+                    {
+                        *canMoveBottomLeft = 0;
+                    }
+
+                    (*moves)[*i] = &chessboard[x - j][y + j];
+                    (*i)++;
+                }
+                else
+                {
+                    *canMoveBottomLeft = 0;
+                }
+            }
+        }
+
+        //lewy gorny
+        if (x - j >= 0 && y - j >= 0)
+        {
+            if (*canMoveTopLeft)
+            {
+                if (chessboard[x - j][y - j].piece == 0 || chessboard[x - j][y - j].piece * color < 0)
+                {
+                    if (chessboard[x - j][y - j].piece * color < 0)
+                    {
+                        *canMoveTopLeft = 0;
+                    }
+
+                    (*moves)[*i] = &chessboard[x - j][y - j];
+                    (*i)++;
+                }
+                else
+                {
+                    *canMoveTopLeft = 0;
+                }
+            }
+        }
+    }
+}
+
+void horizontal_moves(int x, int y, int color, square ***moves, int* i, int* canMoveRight, int* canMoveLeft, int* canMoveBottom, int* canMoveTop)
+{
+
+    for (int j = 1; j < CHESSBOARD_SIZE; j++)
+    {
+        //prawo
+        if (x + j < CHESSBOARD_SIZE)
+        {
+            if (*canMoveRight)
+            {
+                if (chessboard[x + j][y].piece == 0 || chessboard[x + j][y].piece * color < 0)
+                {
+                    if (chessboard[x + j][y].piece * color < 0)
+                    {
+                        *canMoveRight = 0;
+                    }
+
+                    (*moves)[*i] = &chessboard[x + j][y];
+                    (*i)++;
+                }
+                else
+                {
+                    *canMoveRight = 0;
+                }
+            }
+        }
+
+        //lewo
+        if (x - j >= 0)
+        {
+            if (*canMoveLeft)
+            {
+                if (chessboard[x - j][y].piece == 0 || chessboard[x - j][y].piece * color < 0)
+                {
+                    if (chessboard[x - j][y].piece * color < 0)
+                    {
+                        *canMoveLeft = 0;
+                    }
+
+                    (*moves)[*i] = &chessboard[x - j][y];
+                    (*i)++;
+                }
+                else
+                {
+                    *canMoveLeft = 0;
+                }
+            }
+        }
+
+        //dol
+        if (y + j < CHESSBOARD_SIZE)
+        {
+            if (*canMoveBottom)
+            {
+                if (chessboard[x][y + j].piece == 0 || chessboard[x][y + j].piece * color < 0)
+                {
+                    if (chessboard[x][y + j].piece * color < 0)
+                    {
+                        *canMoveBottom = 0;
+                    }
+
+                    (*moves)[*i] = &chessboard[x][y + j];
+                    (*i)++;
+                }
+                else
+                {
+                    *canMoveBottom = 0;
+                }
+            }
+        }
+
+        //gora
+        if (y - j >= 0)
+        {
+            if (*canMoveTop)
+            {
+                if (chessboard[x][y - j].piece == 0 || chessboard[x][y - j].piece * color < 0)
+                {
+                    if (chessboard[x][y - j].piece * color < 0)
+                    {
+                        *canMoveTop = 0;
+                    }
+
+                    (*moves)[*i] = &chessboard[x][y - j];
+                    (*i)++;
+                }
+                else
+                {
+                    *canMoveTop = 0;
+                }
+            }
+        }
+    }
+}
+
+void knight_moves(int x, int y, int color, square ***moves, int* i)
+{
+    if (x + 2 < CHESSBOARD_SIZE && y + 1 < CHESSBOARD_SIZE)
+    {
+        if (chessboard[x + 2][y + 1].piece == 0 || chessboard[x + 2][y + 1].piece * color < 0)
+        {
+            (*moves)[*i] = &chessboard[x + 2][y + 1];
+            (*i)++;
+        }
+    }
+    if (x + 2 < CHESSBOARD_SIZE && y - 1 >= 0)
+    {
+        if (chessboard[x + 2][y - 1].piece == 0 || chessboard[x + 2][y - 1].piece * color < 0)
+        {
+            (*moves)[*i] = &chessboard[x + 2][y - 1];
+            (*i)++;
+        }
+    }
+    if (x - 2 >= 0 && y + 1 < CHESSBOARD_SIZE)
+    {
+        if (chessboard[x - 2][y + 1].piece == 0 || chessboard[x - 2][y + 1].piece * color < 0)
+        {
+            (*moves)[*i] = &chessboard[x - 2][y + 1];
+            (*i)++;
+        }
+    }
+    if (x - 2 >= 0 && y - 1 >= 0)
+    {
+        if (chessboard[x - 2][y - 1].piece == 0 || chessboard[x - 2][y - 1].piece * color < 0)
+        {
+            (*moves)[*i] = &chessboard[x - 2][y - 1];
+            (*i)++;
+        }
+    }
+    if (x + 1 < CHESSBOARD_SIZE && y + 2 < CHESSBOARD_SIZE)
+    {
+        if (chessboard[x + 1][y + 2].piece == 0 || chessboard[x + 1][y + 2].piece * color < 0)
+        {
+            (*moves)[*i] = &chessboard[x + 1][y + 2];
+            (*i)++;
+        }
+    }
+    if (x + 1 < CHESSBOARD_SIZE && y - 2 >= 0)
+    {
+        if (chessboard[x + 1][y - 2].piece == 0 || chessboard[x + 1][y - 2].piece * color < 0)
+        {
+            (*moves)[*i] = &chessboard[x + 1][y - 2];
+            (*i)++;
+        }
+    }
+    if (x - 1 >= 0 && y + 2 < CHESSBOARD_SIZE)
+    {
+        if (chessboard[x - 1][y + 2].piece == 0 || chessboard[x - 1][y + 2].piece * color < 0)
+        {
+            (*moves)[*i] = &chessboard[x - 1][y + 2];
+            (*i)++;
+        }
+    }
+    if (x - 1 >= 0 && y - 2 >= 0)
+    {
+        if (chessboard[x - 1][y - 2].piece == 0 || chessboard[x - 1][y - 2].piece * color < 0)
+        {
+            (*moves)[*i] = &chessboard[x - 1][y - 2];
+            (*i)++;
+        }
+    }
+}
+
+square** simulate_board(square board[8][8], square *from, square *to)
+{
+    square **new_board = malloc(sizeof(square*) * CHESSBOARD_SIZE);
+    for (int x = 0; x < CHESSBOARD_SIZE; x++)
+    {
+        new_board[x] = malloc(sizeof(square) * CHESSBOARD_SIZE);
+        for (int y = 0; y < CHESSBOARD_SIZE; y++)
+        {
+            new_board[x][y].piece = board[x][y].piece;
+        }
+    }
+    new_board[to->x][to->y].piece = new_board[from->x][from->y].piece;
+    new_board[from->x][from->y].piece = 0;
+    return new_board;
+}
+
+int is_board_in_check(square board[8][8], int color)
+{
+    square *king = NULL;
+    for (int x = 0; x < CHESSBOARD_SIZE; x++)
+    {
+        for (int y = 0; y < CHESSBOARD_SIZE; y++)
+        {
+            if (board[x][y].piece == color * 6)
+            {
+                king = &board[x][y];
+                break;
+            }
+        }
+    }
+    
+    square **possible_moves = malloc(sizeof(square*) * 32);
+    int moveCount = 0;
+    
+    int canCheckRight = 1, canCheckLeft = 1, canCheckUp = 1, canCheckDown = 1;
+    horizontal_moves(king->x, king->y, color, &possible_moves, &moveCount, &canCheckRight, &canCheckLeft, &canCheckDown, &canCheckUp);
+    
+    for (int i = 0; i < moveCount; i++)
+    {
+        if (possible_moves[i]->piece * color < 0)
+        {
+            int type = abs(possible_moves[i]->piece);
+            if (type == 4 || type == 5)
+            {
+                free(possible_moves);
+                return color;
+            }
+        }
+    }
+
+    free(possible_moves);
+    possible_moves = malloc(sizeof(square*) * 32);
+    moveCount = 0;
+    
+    canCheckRight = 1, canCheckLeft = 1, canCheckUp = 1, canCheckDown = 1;
+    diagonal_moves(king->x, king->y, color, &possible_moves, &moveCount, &canCheckRight, &canCheckLeft, &canCheckDown, &canCheckUp);
+    
+    for (int i = 0; i < moveCount; i++)
+    {
+        if (possible_moves[i]->piece * color < 0)
+        {
+            int type = abs(possible_moves[i]->piece);
+            if (type == 1)
+            {
+                int x = possible_moves[i]->x, y = possible_moves[i]->y;
+                if (x == king->x + 1 && y == king->y - color || x == king->x - 1 && y == king->y - color)
+                {
+                    free(possible_moves);
+                    return color;
+                }
+            }
+            if (type == 3 || type == 5)
+            {
+                free(possible_moves);
+                return color;
+            }
+        }
+    }
+
+    free(possible_moves);
+    possible_moves = malloc(sizeof(square*) * 8);
+    moveCount = 0;
+    
+    knight_moves(king->x, king->y, color, &possible_moves, &moveCount);
+    for (int i = 0; i < moveCount; ++i) 
+    {
+        if (possible_moves[i]->piece * color == -2) 
+        {
+            free(possible_moves);
+            return color;
+        }
+    }
+
+    free(possible_moves);
+    return 0;
+}
+
 //zwraca ruchy oraz przypisuje ilosc ruchow do moveCount
-square** get_possible_moves(square* s, int* moveCount) {
-    square** moves = malloc(sizeof(square*) * 8);
+square** get_possible_moves(square* s, int* moveCount) 
+{
+    square** moves = malloc(sizeof(square*) * 32);
     int i = 0;
     int x = s->x;
     int y = s->y;
     int piece = s->piece;
     int color = piece > 0 ? 1 : -1;
     int type = abs(piece);
+    
+    //dla ukosnych ruchow
+    int canMoveTopRight = 1, canMoveTopLeft = 1, canMoveBottomRight = 1, canMoveBottomLeft = 1;
+    //dla poziomych/pionowych ruchow
+    int canMoveRight = 1, canMoveLeft = 1, canMoveBottom = 1, canMoveTop = 1;
+    
     switch (type) {
         case 1: //pionek (może ruszać się tylko do przodu, i tylko gdy nie ma żadnego pionka na polu docelowym) (jako jedyny bije inaczej niż rusza)
             if (y - color >= 0 && y - color < CHESSBOARD_SIZE) 
@@ -111,32 +473,126 @@ square** get_possible_moves(square* s, int* moveCount) {
                     i++;
                 }
             }
-
             if (y == 1 && color == -1)
             {
-                if (chessboard[x][y + 2].piece == 0)
+                if (chessboard[x][y + 2].piece == 0 && chessboard[x][y + 1].piece == 0)
                 {
                     moves[i] = &chessboard[x][y + 2];
                     i++;
                 }
             }
-            
             if (y == 6 && color == 1) 
             {
-                if (chessboard[x][y - 2].piece == 0)
+                if (chessboard[x][y - 2].piece == 0 && chessboard[x][y - 1].piece == 0)
                 {
                     moves[i] = &chessboard[x][y - 2];
                     i++;
                 }
             }
             break;
+        case 2: //skoczek
+            knight_moves(x, y, color, &moves, &i);
+            break;
+        case 3: //goniec
+            diagonal_moves(x, y, color, &moves, &i, &canMoveTopRight, &canMoveTopLeft, &canMoveBottomRight, &canMoveBottomLeft);
+            break;
+        case 4: //wieza
+            horizontal_moves(x, y, color, &moves, &i, &canMoveRight, &canMoveLeft, &canMoveBottom, &canMoveTop);
+            break;
+        case 5: //krolowa
+            diagonal_moves(x, y, color, &moves, &i, &canMoveTopRight, &canMoveTopLeft, &canMoveBottomRight, &canMoveBottomLeft);
+            horizontal_moves(x, y, color, &moves, &i, &canMoveRight, &canMoveLeft, &canMoveBottom, &canMoveTop);
+            break;
+        case 6: //krol
+            if (x + 1 < CHESSBOARD_SIZE)
+            {
+                if (chessboard[x + 1][y].piece == 0 || chessboard[x + 1][y].piece * color < 0)
+                {
+                    moves[i] = &chessboard[x + 1][y];
+                    i++;
+                }
+            }
+            if (x - 1 >= 0)
+            {
+                if (chessboard[x - 1][y].piece == 0 || chessboard[x - 1][y].piece * color < 0)
+                {
+                    moves[i] = &chessboard[x - 1][y];
+                    i++;
+                }
+            }
+            if (y + 1 < CHESSBOARD_SIZE)
+            {
+                if (chessboard[x][y + 1].piece == 0 || chessboard[x][y + 1].piece * color < 0)
+                {
+                    moves[i] = &chessboard[x][y + 1];
+                    i++;
+                }
+            }
+            if (y - 1 >= 0)
+            {
+                if (chessboard[x][y - 1].piece == 0 || chessboard[x][y - 1].piece * color < 0)
+                {
+                    moves[i] = &chessboard[x][y - 1];
+                    i++;
+                }
+            }
+            if (x + 1 < CHESSBOARD_SIZE && y + 1 < CHESSBOARD_SIZE)
+            {
+                if (chessboard[x + 1][y + 1].piece == 0 || chessboard[x + 1][y + 1].piece * color < 0)
+                {
+                    moves[i] = &chessboard[x + 1][y + 1];
+                    i++;
+                }
+            }
+            if (x + 1 < CHESSBOARD_SIZE && y - 1 >= 0)
+            {
+                if (chessboard[x + 1][y - 1].piece == 0 || chessboard[x + 1][y - 1].piece * color < 0)
+                {
+                    moves[i] = &chessboard[x + 1][y - 1];
+                    i++;
+                }
+            }
+            if (x - 1 >= 0 && y + 1 < CHESSBOARD_SIZE)
+            {
+                if (chessboard[x - 1][y + 1].piece == 0 || chessboard[x - 1][y + 1].piece * color < 0)
+                {
+                    moves[i] = &chessboard[x - 1][y + 1];
+                    i++;
+                }
+            }
+            if (x - 1 >= 0 && y - 1 >= 0)
+            {
+                if (chessboard[x - 1][y - 1].piece == 0 || chessboard[x - 1][y - 1].piece * color < 0)
+                {
+                    moves[i] = &chessboard[x - 1][y - 1];
+                    i++;
+                }
+            }
+            break;
+    }
+    
+    //znajdz krola i usun go z listy krokow
+    int foundKing = 0;
+    for (int j = 0; j < i; j++)
+    {
+        if (!foundKing && abs(moves[j]->piece) == 6)
+        {
+            foundKing = 1;
+            i--;
+            continue;
+        } 
+        
+        if (foundKing)
+        {
+            moves[j - 1] = moves[j];
+        }
     }
     
     *moveCount = i;
     return moves;
 }
 
-//zwraca ruchy atakujące (które będą od możliwych ruchów tylko dla pionka) oraz przypisuje ilosc ruchow do moveCount
+//zwraca ruchy atakujące (które będą różne od możliwych ruchów tylko dla pionka) oraz przypisuje ilosc ruchow do moveCount
 square** get_attack_moves(square* s, int* moveCount)
 {
     int piece = s->piece;
@@ -151,7 +607,7 @@ square** get_attack_moves(square* s, int* moveCount)
         
         if (x - 1 >= 0 && y - color >= 0 && y - color < CHESSBOARD_SIZE)
         {
-            if (chessboard[x - 1][y - color].piece != 0 && chessboard[x - 1][y - color].piece * color < 0)
+            if (chessboard[x - 1][y - color].piece != 0 && chessboard[x - 1][y - color].piece * color != -6 && chessboard[x - 1][y - color].piece * color < 0)
             {
                 moves[i] = &chessboard[x - 1][y - color];
                 i++;
@@ -160,7 +616,7 @@ square** get_attack_moves(square* s, int* moveCount)
         
         if (x + 1 < CHESSBOARD_SIZE && y - color >= 0 && y - color < CHESSBOARD_SIZE)
         {
-            if (chessboard[x + 1][y - color].piece != 0 && chessboard[x + 1][y - color].piece * color < 0)
+            if (chessboard[x + 1][y - color].piece != 0 && chessboard[x + 1][y - color].piece * color != -6 && chessboard[x + 1][y - color].piece * color < 0)
             {
                 moves[i] = &chessboard[x + 1][y - color];
                 i++;
@@ -169,11 +625,33 @@ square** get_attack_moves(square* s, int* moveCount)
         
         *moveCount = i;
         return moves;
-    } 
+    }
     else
     {
-        return get_possible_moves(s, moveCount);
+        int overallMoveCount = 0;
+        square** allMoves = get_possible_moves(s, &overallMoveCount);
+        square** attackMoves = malloc(sizeof(square*) * overallMoveCount);
+        int i = 0;
+        int color = piece > 0 ? 1 : -1;
+
+        for (int j = 0; j < overallMoveCount; j++)
+        {
+            if (abs(allMoves[j]->piece) != 6 && allMoves[j]->piece * color < 0)
+            {
+                attackMoves[i] = allMoves[j];
+                i++;
+            }
+        }
+
+        free(allMoves);
+        
+        *moveCount = i;
+        return attackMoves;
     }
+//    else
+//    {
+//        return get_possible_moves(s, moveCount);
+//    }
 }
 
 int exists_in(square** moves, int moveCount, square* s)
@@ -186,6 +664,31 @@ int exists_in(square** moves, int moveCount, square* s)
         }
     }
     return 0;
+}
+
+void check_king_squares()
+{
+    for (int x = 0; x < CHESSBOARD_SIZE; ++x) 
+    {
+        for (int y = 0; y < CHESSBOARD_SIZE; ++y)
+        {
+            square* s = &chessboard[x][y];
+            int type = abs(s->piece);
+            if (type != 6) continue;
+            
+            int color = s->piece > 0 ? 1 : -1;
+            GtkButton *button = s->button;
+            GtkWidget *child = gtk_button_get_child(button);
+            if (color * check > 0)
+            {
+                gtk_widget_set_name(child, "checked_king");
+            } 
+            else
+            {
+                gtk_widget_set_name(child, "normal");
+            }
+        }
+    }
 }
 
 void unselect_square()
@@ -209,6 +712,11 @@ void unselect_square()
     
     for (int i = 0; i < moveCount; ++i)
     {
+        if (exists_in(attackMoves, attackMoveCount, moves[i]))
+        {
+            continue;
+        }
+        
         GtkButton* moveButton = moves[i]->button;
 
         GtkWidget* child = gtk_button_get_child(moveButton);
@@ -228,6 +736,9 @@ void unselect_square()
             gtk_widget_set_name(child, "normal");
         }
     }
+    
+    free(moves);
+    free(attackMoves);
     
     selected_square = NULL;
 }
@@ -254,6 +765,11 @@ void on_square_clicked (GtkWidget *widget, gpointer data)
         
         for (int i = 0; i < moveCount; ++i) 
         {
+            if (exists_in(attackMoves, attackMoveCount, moves[i]))
+            {
+                continue;
+            }
+            
             square* moveSquare = moves[i];
             GtkButton* button = moveSquare->button;
 
@@ -274,6 +790,9 @@ void on_square_clicked (GtkWidget *widget, gpointer data)
             GtkWidget *image = gtk_button_get_child(button);
             gtk_widget_set_name(image, "attacked");
         }
+        
+        free(moves);
+        free(attackMoves);
     } 
     else
     {
@@ -295,10 +814,16 @@ void on_square_clicked (GtkWidget *widget, gpointer data)
                 old_square->piece = 0;
                 
                 //zmieniamy ture
-                //turn *= -1;
+                turn *= -1;
 
+                check = is_board_in_check(chessboard, turn);
+                printf("Check: %s\n", check == 1 ? "bialy" : check == -1 ? "czarny" : "brak");
                 redraw_chessboard();
+                check_king_squares();
             }
+            
+            free(moves);
+            free(attackMoves);
         }
     }
 }

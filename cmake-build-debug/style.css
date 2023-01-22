@@ -50,3 +50,11 @@
     background-position: center;
     opacity: 0.5;
 }
+
+#checked_king
+{
+    background-image: url("images/checked_king.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
