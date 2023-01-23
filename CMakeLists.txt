@@ -13,4 +13,4 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GTK4_LDFLAGS_OTHER}")
 
 add_executable(Szachy main.c)
 
-target_link_libraries(Szachy ${GTK4_LIBRARIES})
+target_link_libraries(Szachy ${GTK4_LIBRARIES} -static-libgcc -static-libstdc++)

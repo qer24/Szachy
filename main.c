@@ -71,6 +71,54 @@ char *piece_to_image_path(int piece)
     return piece_icon;
 }
 
+char *piece_to_ascii(int piece)
+{
+    char *piece_icon;
+    switch(piece)
+    {
+        case 1:
+            piece_icon = "♙";
+            break;
+        case -1:
+            piece_icon = "♟";
+            break;
+        case 2:
+            piece_icon = "♘";
+            break;
+        case -2:
+            piece_icon = "♞";
+            break;
+        case 3:
+            piece_icon = "♗";
+            break;
+        case -3:
+            piece_icon = "♝";
+            break;
+        case 4:
+            piece_icon = "♖";
+            break;
+        case -4:
+            piece_icon = "♜";
+            break;
+        case 5:
+            piece_icon = "♕";
+            break;
+        case -5:
+            piece_icon = "♛";
+            break;
+        case 6:
+            piece_icon = "♔";
+            break;
+        case -6:
+            piece_icon = "♚";
+            break;
+        default:
+            piece_icon = " ";
+            break;
+    }
+    return piece_icon;
+}
+
 void redraw_chessboard()
 {
     int x, y;
@@ -350,6 +398,7 @@ void knight_moves(int x, int y, int color, square ***moves, int* i)
     }
 }
 
+//potrzebne do przewidywania szachowania
 square** simulate_board(square board[8][8], square *from, square *to)
 {
     square **new_board = malloc(sizeof(square*) * CHESSBOARD_SIZE);
@@ -358,7 +407,7 @@ square** simulate_board(square board[8][8], square *from, square *to)
         new_board[x] = malloc(sizeof(square) * CHESSBOARD_SIZE);
         for (int y = 0; y < CHESSBOARD_SIZE; y++)
         {
-            new_board[x][y].piece = board[x][y].piece;
+            new_board[x][y] = board[x][y];
         }
     }
     new_board[to->x][to->y].piece = new_board[from->x][from->y].piece;
@@ -366,16 +415,17 @@ square** simulate_board(square board[8][8], square *from, square *to)
     return new_board;
 }
 
-int is_board_in_check(square board[8][8], int color)
+//zwraca czy krol jest szachowany
+int is_board_in_check(int color)
 {
     square *king = NULL;
     for (int x = 0; x < CHESSBOARD_SIZE; x++)
     {
         for (int y = 0; y < CHESSBOARD_SIZE; y++)
         {
-            if (board[x][y].piece == color * 6)
+            if (chessboard[x][y].piece == color * 6)
             {
-                king = &board[x][y];
+                king = &chessboard[x][y];
                 break;
             }
         }
@@ -445,6 +495,60 @@ int is_board_in_check(square board[8][8], int color)
 
     free(possible_moves);
     return 0;
+}
+
+void limit_to_non_checks(square*** moves, int *moveCount, square board[8][8], square *from, int color)
+{
+    //zapisz stara szachownice
+    square old_board[8][8];
+    for (int x = 0; x < CHESSBOARD_SIZE; x++)
+    {
+        for (int y = 0; y < CHESSBOARD_SIZE; y++)
+        {
+            old_board[x][y] = board[x][y];
+        }
+    }
+    
+    square **new_moves = malloc(sizeof(square*) * *moveCount);
+    int new_moveCount = 0;
+    for (int i = 0; i < *moveCount; i++)
+    {
+        square **simulated_board = simulate_board(board, from, (*moves)[i]);
+        for (int y = 0; y < CHESSBOARD_SIZE; y++)
+        {
+            for (int x = 0; x < CHESSBOARD_SIZE; x++)
+            {
+                //zasymuluj ruch na szachownicy
+                chessboard[x][y] = simulated_board[x][y];
+            }
+        }
+
+        if (!is_board_in_check(color))
+        {
+            new_moves[new_moveCount] = (*moves)[i];
+            new_moveCount++;
+        }
+        
+        //unallocate simulated board
+        for (int x = 0; x < CHESSBOARD_SIZE; x++)
+        {
+            free(simulated_board[x]);
+        }
+        free(simulated_board);
+        
+        //wczytaj stara szachownice po każdej symulacji ruchu
+        for (int x = 0; x < CHESSBOARD_SIZE; x++)
+        {
+            for (int y = 0; y < CHESSBOARD_SIZE; y++)
+            {
+                board[x][y] = old_board[x][y];
+            }
+        }
+    }
+    
+    free(*moves);
+    *moveCount = new_moveCount;
+    *moves = new_moves;
 }
 
 //zwraca ruchy oraz przypisuje ilosc ruchow do moveCount
@@ -587,6 +691,8 @@ square** get_possible_moves(square* s, int* moveCount)
             moves[j - 1] = moves[j];
         }
     }
+
+    limit_to_non_checks(&moves, &i, chessboard, s, color);
     
     *moveCount = i;
     return moves;
@@ -622,6 +728,8 @@ square** get_attack_moves(square* s, int* moveCount)
                 i++;
             }
         }
+
+        limit_to_non_checks(&moves, &i, chessboard, s, color);
         
         *moveCount = i;
         return moves;
@@ -644,6 +752,8 @@ square** get_attack_moves(square* s, int* moveCount)
         }
 
         free(allMoves);
+
+        limit_to_non_checks(&attackMoves, &i, chessboard, s, color);
         
         *moveCount = i;
         return attackMoves;
@@ -664,6 +774,73 @@ int exists_in(square** moves, int moveCount, square* s)
         }
     }
     return 0;
+}
+
+void exit_game()
+{
+    g_application_quit(g_application_get_default());
+}
+
+void test_for_game_end()
+{
+    for (int x = 0; x < CHESSBOARD_SIZE; x++)
+    {
+        for (int y = 0; y < CHESSBOARD_SIZE; y++)
+        {
+            square *s = &chessboard[x][y];
+            int color = s->piece > 0 ? 1 : -1;
+            if (color == turn)
+            {
+                int moveCount = 0;
+                square** moves = get_possible_moves(s, &moveCount);
+                free(moves);
+                if (moveCount > 0)
+                {
+                    return;
+                }
+            }
+        }
+    }
+    
+    char* message = malloc(sizeof(char) * 100);
+    //jesli nie znaleziono zadnego ruchu
+    if (check == turn)
+    {
+        sprintf(message, "Szach mat! %s wygrywa!\n", turn == 1 ? "Czarny" : "Bialy");
+    }
+    else
+    {
+        message = "Pat!\n";
+    }
+
+    GtkWidget *window = gtk_window_new();
+    gtk_window_set_title (GTK_WINDOW (window), "Koniec Gry!");
+    //gtk_window_set_default_size(GTK_WINDOW(window), 300, 200);
+
+    GtkWidget *grid = gtk_grid_new ();
+    
+    GtkWidget *label = gtk_label_new(message);
+    
+    gtk_widget_set_halign (label, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(label, TRUE);
+    gtk_widget_set_vexpand(label, TRUE);
+    
+    gtk_grid_attach(GTK_GRID(grid), label, 0, 0, 1, 1);
+    
+    GtkWidget *exitButton = gtk_button_new_with_label("Wyjscie");
+    g_signal_connect(exitButton, "clicked", G_CALLBACK(exit_game), NULL);
+    
+    gtk_widget_set_halign (exitButton, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(exitButton, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(exitButton, TRUE);
+    gtk_widget_set_vexpand(exitButton, TRUE);
+    
+    gtk_grid_attach(GTK_GRID(grid), exitButton, 0, 1, 1, 1);
+
+    gtk_window_set_child (GTK_WINDOW (window), grid);
+
+    gtk_widget_show (window);
 }
 
 void check_king_squares()
@@ -816,10 +993,11 @@ void on_square_clicked (GtkWidget *widget, gpointer data)
                 //zmieniamy ture
                 turn *= -1;
 
-                check = is_board_in_check(chessboard, turn);
-                printf("Check: %s\n", check == 1 ? "bialy" : check == -1 ? "czarny" : "brak");
+                check = is_board_in_check(turn);
+                //printf("Check: %s\n", check == 1 ? "bialy" : check == -1 ? "czarny" : "brak");
                 redraw_chessboard();
                 check_king_squares();
+                test_for_game_end();
             }
             
             free(moves);
