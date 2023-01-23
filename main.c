@@ -551,6 +551,68 @@ void limit_to_non_checks(square*** moves, int *moveCount, square board[8][8], sq
     *moves = new_moves;
 }
 
+int king_in_range(int x, int y, int color)
+{
+    if (x + 1 < CHESSBOARD_SIZE)
+    {
+        if (chessboard[x + 1][y].piece * color == -6)
+        {
+            return 1;
+        }
+    }
+    if (x - 1 >= 0)
+    {
+        if (chessboard[x - 1][y].piece * color == -6)
+        {
+            return 1;
+        }
+    }
+    if (y + 1 < CHESSBOARD_SIZE)
+    {
+        if (chessboard[x][y + 1].piece * color == -6)
+        {
+            return 1;
+        }
+    }
+    if (y - 1 >= 0)
+    {
+        if (chessboard[x][y - 1].piece * color == -6)
+        {
+            return 1;
+        }
+    }
+    if (x + 1 < CHESSBOARD_SIZE && y + 1 < CHESSBOARD_SIZE)
+    {
+        if (chessboard[x + 1][y + 1].piece * color == -6)
+        {
+            return 1;
+        }
+    }
+    if (x + 1 < CHESSBOARD_SIZE && y - 1 >= 0)
+    {
+        if (chessboard[x + 1][y - 1].piece * color == -6)
+        {
+            return 1;
+        }
+    }
+    if (x - 1 >= 0 && y + 1 < CHESSBOARD_SIZE)
+    {
+        if (chessboard[x - 1][y + 1].piece * color == -6)
+        {
+            return 1;
+        }
+    }
+    if (x - 1 >= 0 && y - 1 >= 0)
+    {
+        if (chessboard[x - 1][y - 1].piece * color == -6)
+        {
+            return 1;
+        }
+    }
+    
+    return 0;
+}
+
 //zwraca ruchy oraz przypisuje ilosc ruchow do moveCount
 square** get_possible_moves(square* s, int* moveCount) 
 {
@@ -610,7 +672,7 @@ square** get_possible_moves(square* s, int* moveCount)
         case 6: //krol
             if (x + 1 < CHESSBOARD_SIZE)
             {
-                if (chessboard[x + 1][y].piece == 0 || chessboard[x + 1][y].piece * color < 0)
+                if (!king_in_range(x+1,y,color) && (chessboard[x + 1][y].piece == 0 || chessboard[x + 1][y].piece * color < 0))
                 {
                     moves[i] = &chessboard[x + 1][y];
                     i++;
@@ -618,7 +680,7 @@ square** get_possible_moves(square* s, int* moveCount)
             }
             if (x - 1 >= 0)
             {
-                if (chessboard[x - 1][y].piece == 0 || chessboard[x - 1][y].piece * color < 0)
+                if (!king_in_range(x-1,y,color) && (chessboard[x - 1][y].piece == 0 || chessboard[x - 1][y].piece * color < 0))
                 {
                     moves[i] = &chessboard[x - 1][y];
                     i++;
@@ -626,7 +688,7 @@ square** get_possible_moves(square* s, int* moveCount)
             }
             if (y + 1 < CHESSBOARD_SIZE)
             {
-                if (chessboard[x][y + 1].piece == 0 || chessboard[x][y + 1].piece * color < 0)
+                if (!king_in_range(x,y+1,color) && (chessboard[x][y + 1].piece == 0 || chessboard[x][y + 1].piece * color < 0))
                 {
                     moves[i] = &chessboard[x][y + 1];
                     i++;
@@ -634,7 +696,7 @@ square** get_possible_moves(square* s, int* moveCount)
             }
             if (y - 1 >= 0)
             {
-                if (chessboard[x][y - 1].piece == 0 || chessboard[x][y - 1].piece * color < 0)
+                if (!king_in_range(x,y-1,color) && (chessboard[x][y - 1].piece == 0 || chessboard[x][y - 1].piece * color < 0))
                 {
                     moves[i] = &chessboard[x][y - 1];
                     i++;
@@ -642,7 +704,7 @@ square** get_possible_moves(square* s, int* moveCount)
             }
             if (x + 1 < CHESSBOARD_SIZE && y + 1 < CHESSBOARD_SIZE)
             {
-                if (chessboard[x + 1][y + 1].piece == 0 || chessboard[x + 1][y + 1].piece * color < 0)
+                if (!king_in_range(x+1,y+1,color) && (chessboard[x + 1][y + 1].piece == 0 || chessboard[x + 1][y + 1].piece * color < 0))
                 {
                     moves[i] = &chessboard[x + 1][y + 1];
                     i++;
@@ -650,7 +712,7 @@ square** get_possible_moves(square* s, int* moveCount)
             }
             if (x + 1 < CHESSBOARD_SIZE && y - 1 >= 0)
             {
-                if (chessboard[x + 1][y - 1].piece == 0 || chessboard[x + 1][y - 1].piece * color < 0)
+                if (!king_in_range(x+1,y-1,color) && (chessboard[x + 1][y - 1].piece == 0 || chessboard[x + 1][y - 1].piece * color < 0))
                 {
                     moves[i] = &chessboard[x + 1][y - 1];
                     i++;
@@ -658,7 +720,7 @@ square** get_possible_moves(square* s, int* moveCount)
             }
             if (x - 1 >= 0 && y + 1 < CHESSBOARD_SIZE)
             {
-                if (chessboard[x - 1][y + 1].piece == 0 || chessboard[x - 1][y + 1].piece * color < 0)
+                if (!king_in_range(x-1,y+1,color) && (chessboard[x - 1][y + 1].piece == 0 || chessboard[x - 1][y + 1].piece * color < 0))
                 {
                     moves[i] = &chessboard[x - 1][y + 1];
                     i++;
@@ -666,7 +728,7 @@ square** get_possible_moves(square* s, int* moveCount)
             }
             if (x - 1 >= 0 && y - 1 >= 0)
             {
-                if (chessboard[x - 1][y - 1].piece == 0 || chessboard[x - 1][y - 1].piece * color < 0)
+                if (!king_in_range(x-1,y-1,color) && (chessboard[x - 1][y - 1].piece == 0 || chessboard[x - 1][y - 1].piece * color < 0))
                 {
                     moves[i] = &chessboard[x - 1][y - 1];
                     i++;
@@ -783,27 +845,45 @@ void exit_game()
 
 void test_for_game_end()
 {
-    for (int x = 0; x < CHESSBOARD_SIZE; x++)
+    //konczy gre jesli jest są tylko dwa króle na planszy i nic więcej
+    int figureCount = 0;
+    for (int x = 0; x < CHESSBOARD_SIZE; x++) 
     {
-        for (int y = 0; y < CHESSBOARD_SIZE; y++)
+        for (int y = 0; y < CHESSBOARD_SIZE; y++) 
         {
             square *s = &chessboard[x][y];
-            int color = s->piece > 0 ? 1 : -1;
-            if (color == turn)
+            if (s->piece != 0) 
             {
-                int moveCount = 0;
-                square** moves = get_possible_moves(s, &moveCount);
-                free(moves);
-                if (moveCount > 0)
+                figureCount++;
+            }
+        }
+    }
+    
+    //jeśli jest więcej figur na polu, szukamy mata lub pata (wtedy gdy aktualny gracz nie ma możliwych ruchów)
+    if (figureCount != 2)
+    {
+        for (int x = 0; x < CHESSBOARD_SIZE; x++)
+        {
+            for (int y = 0; y < CHESSBOARD_SIZE; y++)
+            {
+                square *s = &chessboard[x][y];
+                int color = s->piece > 0 ? 1 : -1;
+                if (color == turn)
                 {
-                    return;
+                    int moveCount = 0;
+                    square** moves = get_possible_moves(s, &moveCount);
+                    free(moves);
+                    if (moveCount > 0)
+                    {
+                        return;
+                    }
                 }
             }
         }
     }
     
     char* message = malloc(sizeof(char) * 100);
-    //jesli nie znaleziono zadnego ruchu
+    //jeśli przegrany gracz jest szachowany, wygrywa drugi gracz, inaczej remis (pat)
     if (check == turn)
     {
         sprintf(message, "Szach mat! %s wygrywa!\n", turn == 1 ? "Czarny" : "Bialy");
@@ -841,6 +921,21 @@ void test_for_game_end()
     gtk_window_set_child (GTK_WINDOW (window), grid);
 
     gtk_widget_show (window);
+}
+
+void promote_pawns()
+{
+    for (int x = 0; x < CHESSBOARD_SIZE; x++)
+    {
+        if (chessboard[x][0].piece == 1)
+        {
+            chessboard[x][0].piece = 5;
+        }
+        if (chessboard[x][CHESSBOARD_SIZE - 1].piece == -1)
+        {
+            chessboard[x][CHESSBOARD_SIZE - 1].piece = -5;
+        }
+    }
 }
 
 void check_king_squares()
@@ -995,9 +1090,10 @@ void on_square_clicked (GtkWidget *widget, gpointer data)
 
                 check = is_board_in_check(turn);
                 //printf("Check: %s\n", check == 1 ? "bialy" : check == -1 ? "czarny" : "brak");
+                promote_pawns();
+                test_for_game_end();
                 redraw_chessboard();
                 check_king_squares();
-                test_for_game_end();
             }
             
             free(moves);
